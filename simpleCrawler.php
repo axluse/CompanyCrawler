@@ -4,10 +4,10 @@ require_once (dirname(__FILE__) . '/lib/config.php');
 require_once (dirname(__FILE__) . '/lib/Base.php');
 
 /**
- * クロールマネージャー
+ * 高速基本情報クロールマネージャー
  */
 
-class crawl extends Base {
+class s_crawl extends Base {
 
 	function __construct(){
 		Base::__construct();
@@ -26,17 +26,10 @@ class crawl extends Base {
 
 		//全クロールデータを保存
 		$this->Save($allCompanyData);
-
-
-		// 上でクロールした後に詳細情報を取得し更新する
-		foreach ($allCompanyData as $c){
-			$this->MoreCrawl($c[3]);
-			break;
-		}
 	}
 
 }
 
-new crawl();
+new s_crawl();
 
 ?>

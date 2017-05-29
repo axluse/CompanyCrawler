@@ -102,117 +102,110 @@ Class Base {
 		$URL = "http://xn--vckya7nx51ik9ay55a3l3a.com/companies/" . $brandCode;
 		$htmlFile = file_get_contents($URL);
 		$htmlObj = phpQuery::newDocument($htmlFile);
-		$companyData = array();
 		$detailAddress = "";
-		$counter = 0;
 
-		// クロール対象項目が17個以上のもののみ更新対象
-		if(count($htmlObj['dd.companies_data']) > 16){
-			foreach($htmlObj['dd.companies_data'] as $val) {
-				// 業種
-				if($counter == 0){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// Edinetコード
-				} else if($counter == 1){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 法人番号
-				} else if($counter == 2){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 本店所在地(詳細)
-				} else if($counter == 3){
-					$detailAddress = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 決済日
-				} else if($counter == 4){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 上場年月日
-				} else if($counter == 5){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// コーポレートサイトURL
-				} else if($counter == 6){
-					//$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 最新開示期間
-				} else if($counter == 7){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 会計基準
-				} else if($counter == 8){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 会計監査人
-				} else if($counter == 9){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 資本金
-				} else if($counter == 10){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 連結財務諸表有無
-				} else if($counter == 11){
-					//$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 特定事業規則(連携)
-				} else if($counter == 12){
-					//$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 特定事業規則(単体)
-				} else if($counter == 13){
-					//$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 従業員数
-				} else if($counter == 14){
-					if(count($htmlObj['dd.companies_data']) < 17){
-						$companyData[] = $this->DelAllSpace(pq($val)->text());
-					} else {
-						$companyData[] = "不明";
-						$companyData[] = $this->DelAllSpace(pq($val)->text());
-					}
-					$counter++;
-					// 平均年齢
-				} else if($counter == 15){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 平均勤務年数
-				} else if($counter == 16){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter++;
-					// 年間給与
-				} else if($counter == 17){
-					$companyData[] = $this->DelAllSpace(pq($val)->text());
-					$counter = 0;
-				}
+		$keys = array();
+		$vals = array();
+		$data = array();
+
+		foreach($htmlObj['dt.companies_title'] as $key) {
+			$keys[] = $key;
+		}
+
+		foreach($htmlObj['dd.companies_data'] as $val) {
+			$vals[] = $val;
+		}
+
+		for($i = 0; $i < count($keys); $i++) {
+			$data[] = array($this->DelAllSpace(pq($keys[$i])->text()) , $this->DelAllSpace(pq($vals[$i])->text()));
+		}
+
+		$insertFlg = false;
+		$count = 0;
+		foreach ($data as $val){
+
+			if($val[0] == "業種"){
+				$param = array();
+				$param[] = $val[1];
 			}
 
-			$sql = "UPDATE tbl_company_mst
-				SET address = ?,
-					industry = ?,
-					edinet_code = ?,
-					corporate_num = ?,
-					settlement_date = ?,
-					listing_date = ?,
-					disclosure_period = ?,
-					account_standard = ?,
-					account_auditor = ?,
-					capital = ?,
-					employees = ?,
-					average_age = ?,
-					average_work = ?,
-					annual_income = ?
-				WHERE brand_code = ?";
+			if($val[0] == "Edinetコード"){
+				$param[] = $val[1];
+			}
 
-			$param = array($detailAddress);
-			$arrBrandCode = array($brandCode);
-			$param = array_merge($param, $companyData);
-			$param = array_merge($param, $arrBrandCode);
+			if($val[0] == "法人番号"){
+				$param[] = $val[1];
+			}
 
-			$this->Execute($sql, $param);
+			if($val[0] == "本店所在地"){
+				$detailAddress = $val[1];
+			}
+
+			if($val[0] == "決算日"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "上場年月日"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "最新開示期間"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "採用している会計基準"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "会計監査人"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "資本金"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "従業員数"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "平均年齢"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "平均勤続年数"){
+				$param[] = $val[1];
+			}
+
+			if($val[0] == "年間給与"){
+				$param[] = $val[1];
+				$param = array_merge(array($detailAddress) , $param);
+				$param = array_merge($param, array($brandCode));
+			}
 		}
+
+		var_dump($param);
+		$sql = "UPDATE tbl_company_mst
+			SET address = ?,
+				industry = ?,
+				edinet_code = ?,
+				corporate_num = ?,
+				settlement_date = ?,
+				listing_date = ?,
+				disclosure_period = ?,
+				account_standard = ?,
+				account_auditor = ?,
+				capital = ?,
+				employees = ?,
+				average_age = ?,
+				average_work = ?,
+				annual_income = ?
+			WHERE brand_code = ?";
+
+		$this->Execute($sql, $param);
+
+		flush();
+		ob_flush();
 	}
 
 	/**
@@ -325,7 +318,7 @@ Class Base {
 	 * 空白削除
 	 */
 	function DelAllSpace($string){
-		return str_replace( array( " ", "　", "	", "\n"), "", $string);
+		return str_replace( array( "\xc2\xa0", " ", "　", "	", "\n"), "", $string);
 	}
 }
 
