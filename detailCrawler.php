@@ -16,14 +16,13 @@ class d_crawl extends Base {
 
 	function start(){
 		// データ取得
-		$sql = "SELECT cm.brand_code FROM tbl_company_mst cm WHERE cm.company_id > 730";
+		$sql = "SELECT cm.brand_code FROM tbl_company_mst cm WHERE cm.company_id > 900";
 		//$sql = "SELECT cm.brand_code FROM tbl_company_mst cm";
 		$data = $this->GetAll($sql);
 
 		$counter = 0;
 		foreach ($data as $d){
 			$counter++;
-			echo $counter ."/". count($data);
 			$this->MoreCrawl($d['brand_code']);
 		}
 	}

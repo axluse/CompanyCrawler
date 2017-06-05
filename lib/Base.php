@@ -98,7 +98,7 @@ Class Base {
 	/**
 	 * クロールPart2
 	 */
-	function MoreCrawl($brandCode){
+	function MoreCrawl($brandCode, $getParamMode = false){
 		$URL = "http://xn--vckya7nx51ik9ay55a3l3a.com/companies/" . $brandCode;
 		$htmlFile = file_get_contents($URL);
 		$htmlObj = phpQuery::newDocument($htmlFile);
@@ -184,8 +184,10 @@ Class Base {
 			}
 		}
 
-		var_dump($param);
-		$sql = "UPDATE tbl_company_mst
+		if($getParamMode){
+			return $param;
+		} else {
+			$sql = "UPDATE tbl_company_mst
 			SET address = ?,
 				industry = ?,
 				edinet_code = ?,
@@ -202,10 +204,122 @@ Class Base {
 				annual_income = ?
 			WHERE brand_code = ?";
 
-		$this->Execute($sql, $param);
+			$this->Execute($sql, $param);
+		}
 
 		flush();
 		ob_flush();
+	}
+
+	/**
+	 * ●新規上場企業サーチ
+	 */
+	function getNewPublicCompany(){
+		$URL = "http://www.jpx.co.jp/listing/stocks/new/index.html";
+		$htmlFile = file_get_contents($URL);
+		$htmlObj = phpQuery::newDocument($htmlFile);
+
+
+		$counter = 1;
+		foreach ($htmlObj['tbody tr td'] as $val){
+			// 一時データ格納用の配列を初期化
+			if($counter == 1){
+				$arrData = array();
+
+			// 企業名 / 銘柄コード取得 (スペース/改行文字等削除)
+			} else if($counter == 2 || $counter == 3){
+				$arrData[] = ($this->DelAllSpace(pq($val)->text()));
+
+			// 対象銘柄コードが存在しているか確認
+			} else if($counter == 14){
+				// DBに未登録の会社
+				if(!$this->searchBCtoCN($arrData[1])){
+
+					$targetBrandCode = (strval(intval($arrData[1])));
+
+					$param = $this->MoreCrawl($targetBrandCode, true);
+
+					$arrData[0] = str_replace(array("代表者インタビュー", "＊", "*"), "", $arrData[0]);
+					$arrData[1] = intval($arrData[1]);
+
+					$sql  = // 新規追加用
+					"INSERT INTO tbl_company_mst (
+						company_name,
+						brand_code,
+						exchange_code,
+						address,
+						industry,
+						edinet_code,
+						corporate_num,
+						settlement_date,
+						listing_date,
+						disclosure_period,
+						account_standard,
+						account_auditor,
+						capital,
+						employees,
+						average_age,
+						average_work,
+						annual_income,
+						ins_date,
+						upd_date
+						) VALUES (
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							?,
+							NOW(),
+							NOW()
+						)";
+
+					$param = (array_merge($arrData, $param));
+					array_pop($param);
+
+					$this->Execute($sql, $param);
+				}
+
+			// 取引所取得 (スペース/改行文字等削除)
+			} else if($counter == 9){
+				$data = strval($this->DelAllSpace(pq($val)->text()));
+				if($data == "第一部"){
+					$data = "東１";
+				} else if($data == "第二部"){
+					$data = "東２";
+				} else if($data == "JQスタンダード"){
+					$data = "ＪＱ";
+				} else if($data == "マザーズ"){
+					$data = "マザ";
+				}
+
+				$arrData[] = $data;
+			}
+			$counter++;
+			if($counter == 15){
+				$counter = 1;
+			}
+		}
+	}
+
+	/**
+	 * ●上場企業名 - ブランドコードサーチ
+	 */
+	function searchBCtoCN($brandCode){
+		$sql = "SELECT cm.company_name FROM tbl_company_mst cm WHERE cm.brand_code = ?";
+		$companyName = $this->GetOne($sql, array($brandCode));
+		return $companyName;
 	}
 
 	/**
@@ -318,8 +432,9 @@ Class Base {
 	 * 空白削除
 	 */
 	function DelAllSpace($string){
-		return str_replace( array( "\xc2\xa0", " ", "　", "	", "\n"), "", $string);
+		return str_replace( array( "\xc2\xa0", " ", "　", "	", "\n", "\r"), "", $string);
 	}
+
 }
 
 new Base();
